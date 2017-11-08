@@ -70,7 +70,7 @@ def prompt_for_arg(arg, field, prompt, default):
 
 prompt_for_arg(args, "maxVolumes", "Max number of volumes to create (8): ", "8")
 prompt_for_arg(args, "duration", "Test duration in minutes (1): ", "1")
-prompt_for_arg(args, "plugin", "Name of the plugin repository with version (hpe:latest): ", "hpe")
+prompt_for_arg(args, "plugin", "Name of the plugin repository with version (hpe:latest): ", "hpe:latest")
 prompt_for_arg(args, "provisioning", "Provisioning type of volumes (thin, full or dedup): ", "thin")
 prompt_for_arg(args, "etcd", "Name of the etcd container (etcd): ", "etcd")
 print
@@ -130,8 +130,6 @@ def LogMessage(msg="",actionIncrement=0,action=None):
     elif action and action == "delete_volume":
         totalActions_delete += actionIncrement
     elif action and action == "mount_unmount_volume":
-        totalActions_mount_unmount += 1
-        totalActions += 1
         totalActions_mount_unmount += actionIncrement
 
     if msg == "break out wait after 15 minutes...":
@@ -212,21 +210,13 @@ class Docker3ParVolumePlugin():
     # method to perform mount and unmount operation and delete containers after performing operations
     def mount_unmount_volume(self, volume):
         client = docker.from_env(version=TEST_API_VERSION)
-        container1 = client.containers.run(
-                     BUSYBOX, "sh -c 'echo \"hello\" > /insidecontainer/test'",
-                      volumes=[volume.name + ":/insidecontainer"],
-                      detach=True
+        container = client.containers.run(BUSYBOX, "sh", detach=True,
+                                          tty=True, stdin_open=True, remove=True,
+                                          volumes=[volume.name + ':/insidecontainer']
         )
-        container1.wait()
-        container1.remove()
-
-        container2 = client.containers.run(
-            BUSYBOX, "sh -c 'cat /insidecontainer/test'",
-            volumes=[volume.name + ":/insidecontainer"],
-            detach=True
-        )
-        container2.wait()
-        container2.remove()
+        container.exec_run("sh -c 'echo \"data\" > /insidecontainer/test'")
+        assert container.exec_run("cat /insidecontainer/test") == b"data\n"
+        container.stop()
         return True
 
 
