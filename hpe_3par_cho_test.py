@@ -211,15 +211,15 @@ class Docker3ParVolumePlugin():
     def mount_unmount_volume(self, volume):
         client = docker.from_env(version=TEST_API_VERSION)
         container = client.containers.run(BUSYBOX, "sh", detach=True,
-                                          tty=True, stdin_open=True, remove=True,
+                                          tty=True, stdin_open=True,
                                           volumes=[volume.name + ':/insidecontainer']
         )
         container.exec_run("sh -c 'echo \"data\" > /insidecontainer/test'")
         assert container.exec_run("cat /insidecontainer/test") == b"data\n"
         container.stop()
+        container.wait()
+        container.remove()
         return True
-
-
 
 ##### Individual test functions ######################################
 
