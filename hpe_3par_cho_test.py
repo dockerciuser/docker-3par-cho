@@ -271,9 +271,11 @@ try:
 
             elif action == "mount_unmount_volume":
                 volumes = client.volumes.list(filters = {'dangling':True})
-                if len(volumes) > 0:
-                    LogMessage("==========> Performing mount and unmount operations for volume: %s <==========" % volumes[0].name)
-                    performed_action = dcv.mount_unmount_volume(volumes[0])
+                dangling_volumes = len(volumes)
+                if dangling_volumes > 0:
+                    random_volume = volumes[random.randint(0, (dangling_volumes-1))]
+                    LogMessage("==========> Performing mount and unmount operations for volume: %s <==========" % random_volume.name)
+                    performed_action = dcv.mount_unmount_volume(random_volume)
                     if performed_action == True:
                         LogMessage("************Successfully completed %s operation.************" % action,1,action)
                     else:
@@ -284,9 +286,11 @@ try:
 
             elif action == "delete_volume":
                 volumes = client.volumes.list(filters={'dangling': True})
-                if len(volumes) > 0:
-                    LogMessage("==========>Performing delete operation on volume: %s <==========" % volumes[0].name)
-                    performed_action = dcv.delete_volume(volumes[0])
+                dangling_volumes = len(volumes)
+                if dangling_volumes > 0:
+                    random_volume = volumes[random.randint(0, (dangling_volumes-1))]
+                    LogMessage("==========>Performing delete operation on volume: %s <==========" % random_volume.name)
+                    performed_action = dcv.delete_volume(random_volume)
                     if performed_action:
                         LogMessage("************Successfully completed %s operation.************" % action,1,action)
 
