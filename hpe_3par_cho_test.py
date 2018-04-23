@@ -25,24 +25,35 @@ import docker
 
 # Test global variables
 
-BUSYBOX = 'busybox:buildroot-2014.02'
+BUSYBOX = 'busybox'
 TEST_API_VERSION = os.environ.get('DOCKER_TEST_API_VERSION')
 
 logger = None
 
 totalActions = 0
-totalActions_create = 0
-totalActions_delete = 0
-totalActions_mount_unmount = 0
+totalActions_create_volume = 0
+totalActions_delete_volume = 0
+totalActions_mount_volume = 0
+totalActions_unmount_volume = 0
+totalActions_create_snapshot = 0
+totalActions_delete_snapshot = 0
+totalActions_mount_snapshot = 0
+totalActions_unmount_snapshot = 0
 
 totalErrors = 0
-totalErrors_create = 0
-totalErrors_delete = 0
-totalErrors_mount_unmount = 0
+totalErrors_create_volume = 0
+totalErrors_delete_volume = 0
+totalErrors_mount_volume = 0
+totalErrors_unmount_volume = 0
+totalErrors_create_snapshot = 0
+totalErrors_delete_snapshot = 0
+totalErrors_mount_snapshot = 0
+totalErrors_unmount_snapshot = 0
 
 clock_start = time()
 
 volumeCount=0
+snapshotCount=0
 
 waitTimeInMinutes = 5
 
@@ -115,9 +126,14 @@ def SetupLogging(logfile=None):
 # Method for message logger and count the number of operations performed during the test
 def LogMessage(msg="",actionIncrement=0,action=None):
     global totalActions
-    global totalActions_create
-    global totalActions_delete
-    global totalActions_mount_unmount
+    global totalActions_create_volume
+    global totalActions_delete_volume
+    global totalActions_mount_volume
+    global totalActions_unmount_volume
+    global totalActions_create_snapshot
+    global totalActions_delete_snapshot
+    global totalActions_mount_snapshot
+    global totalActions_unmount_snapshot
 
     totalActions += actionIncrement
 
@@ -126,11 +142,21 @@ def LogMessage(msg="",actionIncrement=0,action=None):
     logger.info(entry)
 
     if action and action == "create_volume":
-        totalActions_create += actionIncrement
+        totalActions_create_volume += actionIncrement
     elif action and action == "delete_volume":
-        totalActions_delete += actionIncrement
-    elif action and action == "mount_unmount_volume":
-        totalActions_mount_unmount += actionIncrement
+        totalActions_delete_volume += actionIncrement
+    elif action and action == "mount_volume":
+        totalActions_mount_volume += actionIncrement
+    elif action and action == "unmount_volume":
+        totalActions_unmount_volume += actionIncrement
+    elif action and action == "create_snapshot":
+        totalActions_create_snapshot += actionIncrement
+    elif action and action == "delete_snapshot":
+        totalActions_delete_snapshot += actionIncrement
+    elif action and action == "mount_snapshot":
+        totalActions_mount_snapshot += actionIncrement
+    elif action and action == "unmount_snapshot":
+        totalActions_unmount_snapshot += actionIncrement
 
     if msg == "break out wait after 15 minutes...":
         dump = commands.getstatusoutput('top -bn1')
@@ -140,9 +166,14 @@ def LogMessage(msg="",actionIncrement=0,action=None):
 # Method for error logger and count the number of errors occurred during the tests
 def LogError(msg="", errorIncrement=1, action=None):
     global totalErrors
-    global totalErrors_create
-    global totalErrors_delete
-    global totalErrors_mount_unmount
+    global totalErrors_create_volume
+    global totalErrors_delete_volume
+    global totalErrors_mount_volume
+    global totalErrors_unmount_volume
+    global totalErrors_create_snapshot
+    global totalErrors_delete_snapshot
+    global totalErrors_mount_snapshot
+    global totalErrors_unmount_snapshot
 
     totalErrors += errorIncrement
 
@@ -150,24 +181,44 @@ def LogError(msg="", errorIncrement=1, action=None):
     logger.info(entry)
 
     if action and action == "create_volume":
-        totalErrors_create += errorIncrement
+        totalErrors_create_volume += errorIncrement
     elif action and action == "delete_volume":
-        totalErrors_delete += errorIncrement
-    elif action and action == "mount_unmount_volume":
-        totalErrors_mount_unmount += errorIncrement
+        totalErrors_delete_volume += errorIncrement
+    elif action and action == "mount_volume":
+        totalErrors_mount_volume += errorIncrement
+    elif action and action == "unmount_volume":
+        totalErrors_unmount_volume += errorIncrement
+    elif action and action == "create_snapshot":
+        totalErrors_create_snapshot += errorIncrement
+    elif action and action == "delete_snapshot":
+        totalErrors_delete_snapshot += errorIncrement
+    elif action and action == "mount_snapshot":
+        totalErrors_mount_snapshot += errorIncrement
+    elif action and action == "unmount_snapshot":
+        totalErrors_unmount_snapshot += errorIncrement
 
 # Method for logging test results and test time after performing the different actions
 def TestFinished():
     global clock_start
     LogMessage( "Test performed %s actions." % totalActions)
-    LogMessage( "Test performed %s create volume actions." % totalActions_create)
-    LogMessage( "Test performed %s delete volume actions." % totalActions_delete)
-    LogMessage( "Test performed %s mount and unmount volume actions." % totalActions_mount_unmount)
+    LogMessage( "Test performed %s create volume actions." % totalActions_create_volume)
+    LogMessage( "Test performed %s delete volume actions." % totalActions_delete_volume)
+    LogMessage( "Test performed %s mount volume actions." % totalActions_mount_volume)
+    LogMessage( "Test performed %s unmount volume actions." % totalActions_unmount_volume)
+    LogMessage("Test performed %s create snapshot actions." % totalActions_create_snapshot)
+    LogMessage("Test performed %s delete snapshot actions." % totalActions_delete_snapshot)
+    LogMessage("Test performed %s mount snapshot actions." % totalActions_mount_snapshot)
+    LogMessage("Test performed %s unmount snapshot actions." % totalActions_unmount_snapshot)
 
     LogMessage( "Test observed  %s errors." % totalErrors)
-    LogMessage( "Test observed  %s create volume errors." % totalErrors_create)
-    LogMessage( "Test observed  %s delete volume errors." % totalErrors_delete)
-    LogMessage( "Test observed  %s mount and unmount volume errors." % totalErrors_mount_unmount)
+    LogMessage( "Test observed  %s create volume errors." % totalErrors_create_volume)
+    LogMessage( "Test observed  %s delete volume errors." % totalErrors_delete_volume)
+    LogMessage( "Test observed  %s mount volume errors." % totalErrors_mount_volume)
+    LogMessage( "Test observed  %s unmount volume errors." % totalErrors_unmount_volume)
+    LogMessage( "Test observed  %s create snapshot errors." % totalErrors_create_snapshot)
+    LogMessage( "Test observed  %s delete snapshot errors." % totalErrors_delete_snapshot)
+    LogMessage( "Test observed  %s mount snapshot errors." % totalErrors_mount_snapshot)
+    LogMessage( "Test observed  %s unmount snapshot errors." % totalErrors_unmount_snapshot)
 
 
     LogMessage( "Total test time: %s" % timedelta(seconds=time()-clock_start))
@@ -190,6 +241,7 @@ class Docker3ParVolumePlugin():
             kwargs['flash-cache'] = kwargs.pop('flash_cache')
         # Create a volume
         volume = client.volumes.create(name=name, driver=driver,
+                                       labels={'type': 'volume'},
                                        driver_opts=kwargs
         )
         assert volume.id
@@ -207,19 +259,71 @@ class Docker3ParVolumePlugin():
         assert volume not in client.volumes.list()
         return True
 
-    # method to perform mount and unmount operation and delete containers after performing operations
-    def mount_unmount_volume(self, volume):
+    # method to perform mount operation on volume
+    def mount_volume(self, volume):
         client = docker.from_env(version=TEST_API_VERSION)
         container = client.containers.run(BUSYBOX, "sh", detach=True,
                                           tty=True, stdin_open=True,
-                                          volumes=[volume.name + ':/insidecontainer']
+                                          volumes=[volume.name + ':/insidecontainer'],
+                                          labels={'volume': volume.name, 'mount': 'volume'}
         )
         container.exec_run("sh -c 'echo \"data\" > /insidecontainer/test'")
-        assert container.exec_run("cat /insidecontainer/test") == b"data\n"
+        return container
+
+    # method to perform unmount operation on volume and delete containers after performing operation
+    def unmount_volume(self, container):
+        ExecResult = container.exec_run("cat /insidecontainer/test")
+        assert ExecResult.exit_code == 0
+        assert ExecResult.output == 'data\n'
         container.stop()
-        container.wait()
+        assert container.wait()['StatusCode'] == 0 or 137
         container.remove()
         return True
+
+    # method to perform create snapshot operation
+    def create_snapshot(self, name, driver, **kwargs):
+        client = docker.from_env(version=TEST_API_VERSION)
+        # Create a snapshot
+        snapshot = client.volumes.create(name=name, driver=driver,
+                                         labels={'type': 'snapshot'},
+                                         driver_opts=kwargs
+        )
+        assert snapshot.id
+        assert snapshot.name == name
+        assert snapshot.attrs['Driver'] == driver
+        assert snapshot.attrs['Options'] == kwargs
+        get_snapshot = client.volumes.get(snapshot.id)
+        assert get_snapshot.name == name
+        return snapshot
+
+    # method to perform delete snapshot operation
+    def delete_snapshot(self, snapshot):
+        client = docker.from_env(version=TEST_API_VERSION)
+        snapshot.remove()
+        assert snapshot not in client.volumes.list()
+        return True
+
+    # method to perform mount operation on snapshot
+    def mount_snapshot(self, snapshot):
+        client = docker.from_env(version=TEST_API_VERSION)
+        container = client.containers.run(BUSYBOX, "sh", detach=True,
+                                          tty=True, stdin_open=True,
+                                          volumes=[volume.name + ':/insidecontainer'],
+                                          labels={'snapshot': snapshot.name, 'mount': 'snapshot'}
+        )
+        container.exec_run("sh -c 'echo \"data\" > /insidecontainer/test'")
+        return container
+
+    # method to perform unmount operation on snapshot and delete containers after performing operation
+    def unmount_snapshot(self, container):
+        ExecResult = container.exec_run("cat /insidecontainer/test")
+        assert ExecResult.exit_code == 0
+        assert ExecResult.output == 'data\n'
+        container.stop()
+        assert container.wait()['StatusCode'] == 0 or 137
+        container.remove()
+        return True
+
 
 ##### Individual test functions ######################################
 
@@ -232,6 +336,15 @@ def test_create_volume():
     volume = dcv.create_volume(name, driver=HPE3PAR,
                                size=str(capacity), provisioning=PROVISIONING)
     return volume
+
+def test_create_snapshot(volume_name):
+    global snapshotCount
+    name = "snapshot-%d" % snapshotCount
+    snapshotCount += 1
+    LogMessage("==========> Performing create of new snapshot of %s : %s <==========" % (volume_name, name))
+    snapshot = dcv.create_snapshot(name, driver=HPE3PAR,
+                                   virtualCopyOf=volume_name)
+    return snapshot
 
 #######################################################
 
@@ -249,7 +362,22 @@ try:
     client = docker.from_env(version=TEST_API_VERSION)
     dcv = Docker3ParVolumePlugin()
 
-    actions = [("create_volume", 25),("mount_unmount_volume", 57),("delete_volume",100)]
+    ######################################################
+    # Defining actions and % of time they should be performed (from previous entry to %)
+    # create volume    - 15%
+    # create snapshot  - 12%
+    # mount volume     - 13%
+    # unmount volume   - 13%
+    # mount snapshot   - 10%
+    # unmount snapshot - 10%
+    # delete snapshot  - 12%
+    # delete volume    - 15%
+    #######################################################
+
+    actions = [("create_volume", 15),("create_snapshot", 27),("mount_volume", 40),
+               ("unmount_volume", 53), ("mount_snapshot", 63), ("unmount_snapshot", 73),
+               ("delete_snapshot", 85),("delete_volume", 100)]
+
     volumes = []
     volume_list = []
     container_list = []
@@ -269,28 +397,88 @@ try:
                 if performed_action:
                     LogMessage("************Successfully completed %s operation.**************" % action,1,action)
 
-            elif action == "mount_unmount_volume":
-                volumes = client.volumes.list(filters = {'dangling':True})
+            elif action == "mount_volume":
+                volumes = client.volumes.list(filters = {'dangling':True, 'driver':HPE3PAR,
+                                                         'label': 'type=volume'})
                 dangling_volumes = len(volumes)
                 if dangling_volumes > 0:
                     random_volume = volumes[random.randint(0, (dangling_volumes-1))]
-                    LogMessage("==========> Performing mount and unmount operations for volume: %s <==========" % random_volume.name)
-                    performed_action = dcv.mount_unmount_volume(random_volume)
-                    if performed_action == True:
+                    LogMessage("==========> Performing mount operation for volume: %s <==========" % random_volume.name)
+                    performed_action = dcv.mount_volume(random_volume)
+                    if performed_action:
                         LogMessage("************Successfully completed %s operation.************" % action,1,action)
-                    else:
-                        container_list = client.containers.list(all=True, filters={'since': ETCD_CONTAINER})
-                        if len(container_list) > 0:
-                            for container in container_list:
-                                container.remove()
+
+            elif action == "unmount_volume":
+                container_list = client.containers.list(all=True,
+                                                        filters={'since': ETCD_CONTAINER, 'status': 'running',
+                                                                 'label': 'mount=volume'})
+                if len(container_list) > 0:
+                    LogMessage("==========> Performing unmount operation for volume: %s <==========" % \
+                               container_list[0].labels['volume'] )
+                    performed_action = dcv.unmount_volume(container_list[0])
+                    if performed_action:
+                        LogMessage("************Successfully completed %s operation.************" % action,1,action)
 
             elif action == "delete_volume":
-                volumes = client.volumes.list(filters={'dangling': True})
+                volumes = client.volumes.list(filters={'dangling': True, 'driver':HPE3PAR,
+                                                       'label': 'type=volume'})
                 dangling_volumes = len(volumes)
                 if dangling_volumes > 0:
-                    random_volume = volumes[random.randint(0, (dangling_volumes-1))]
-                    LogMessage("==========>Performing delete operation on volume: %s <==========" % random_volume.name)
-                    performed_action = dcv.delete_volume(random_volume)
+                    for volume in volumes:
+                        if 'Snapshots' not in volume.collection.get(volume.name).attrs['Status']:
+                            LogMessage("==========>Performing delete operation on volume: %s <==========" % volume.name)
+                            performed_action = dcv.delete_volume(volume)
+                            if performed_action:
+                                LogMessage("************Successfully completed %s operation.************" % action,1,action)
+                            break
+
+                local_volumes_list = client.volumes.list(filters={'dangling': True, 'driver': 'local'})
+                local_volumes = len(local_volumes_list)
+                if local_volumes > 0:
+                    for local in local_volumes_list:
+                        dcv.delete_volume(local)
+
+            elif action == "create_snapshot":
+                if len(volumes) >= args.maxVolumes - 1:
+                    continue
+                volumes = client.volumes.list(filters={'driver':HPE3PAR, 'label': 'type=volume'})
+                volumes_len = len(volumes)
+                if volumes_len > 0:
+                    random_volume = volumes[random.randint(0, (volumes_len - 1))]
+                    performed_action= test_create_snapshot(random_volume.name)
+                    if performed_action:
+                        LogMessage("************Successfully completed %s operation.**************" % action,1,action)
+
+            elif action == "mount_snapshot":
+                snapshots = client.volumes.list(filters = {'dangling':True, 'driver':HPE3PAR,
+                                                           'label': 'type=snapshot'})
+                dangling_snapshots = len(snapshots)
+                if dangling_snapshots > 0:
+                    random_snapshot = snapshots[random.randint(0, (dangling_snapshots-1))]
+                    LogMessage("==========> Performing mount operation for snapshot: %s <==========" % random_snapshot.name)
+                    performed_action = dcv.mount_snapshot(random_snapshot)
+                    if performed_action:
+                        LogMessage("************Successfully completed %s operation.************" % action,1,action)
+
+            elif action == "unmount_snapshot":
+                container_list = client.containers.list(all=True,
+                                                        filters={'since': ETCD_CONTAINER, 'status': 'running',
+                                                                 'label': 'mount=snapshot'})
+                if len(container_list) > 0:
+                    LogMessage("==========> Performing unmount operation for snapshot: %s <==========" % \
+                               container_list[0].labels['snapshot'] )
+                    performed_action = dcv.unmount_snapshot(container_list[0])
+                    if performed_action:
+                        LogMessage("************Successfully completed %s operation.************" % action,1,action)
+
+            elif action == "delete_snapshot":
+                snapshots = client.volumes.list(filters={'dangling': True, 'driver':HPE3PAR,
+                                                         'label': 'type=snapshot' })
+                dangling_snapshots = len(snapshots)
+                if dangling_snapshots > 0:
+                    random_snapshot = snapshots[random.randint(0, (dangling_snapshots-1))]
+                    LogMessage("==========>Performing delete operation on volume: %s <==========" % random_snapshot.name)
+                    performed_action = dcv.delete_snapshot(random_snapshot)
                     if performed_action:
                         LogMessage("************Successfully completed %s operation.************" % action,1,action)
 
@@ -313,24 +501,13 @@ try:
 
     # cleaning up containers and volumes
     LogMessage("cleanup...")
-    '''
-    while len(client.containers.list(all=True, filters = {'since':ETCD_CONTAINER})) > 0:
-        try:
-            for container in client.containers.list(all=True, filters = {'since':'etcd'}):
-                performed_action = container.remove()
-                if performed_action:
-                    LogMessage("************Successfully removed container in clean up.************")
-        except docker.errors.APIError as ar:
-            LogMessage(str(ar))
-            continue
-        except TestError as e:
-            LogError(str(e))
-            continue
-    '''
+
     container_list = client.containers.list(all=True, filters = {'since':ETCD_CONTAINER})
     if len(container_list) > 0:
         for container in container_list:
             try:
+                container.stop()
+                assert container.wait()['StatusCode'] == 0 or 137
                 performed_action = container.remove()
                 if performed_action:
                     LogMessage("************Successfully removed container in clean up.************")
@@ -341,14 +518,23 @@ try:
                 LogError(str(e))
                 continue
 
+    snapshot_list = client.volumes.list(filters={'label': 'type=snapshot' })
+    if len(snapshot_list) > 0:
+        for snapshot in snapshot_list:
+            try:
+                performed_action = dcv.delete_snapshot(snapshot)
+            except TestError as e:
+                LogError(str(e), 1, action)
+                continue
+            except docker.errors.APIError as ar:
+                LogError(str(ar), 1, action)
+                continue
+
     volume_list = client.volumes.list()
     if len(volume_list) > 0:
         for volume in volume_list:
-            action = "delete_volume"
             try:
                 performed_action = dcv.delete_volume(volume)
-                if performed_action:
-                    LogMessage("Successfully completed delete_volume in clean up.", 1, action)
             except TestError as e:
                 LogError(str(e), 1, action)
                 continue
@@ -358,7 +544,7 @@ try:
 
 except TestError as e:
     LogError(str(e))
-    LogError("Aborting test.  Too frightened to continue.",0)
+    LogError("Aborting test.  Too frightened to continue.", 0)
 
 
 ############################################
