@@ -25,7 +25,7 @@ import docker
 
 # Test global variables
 
-BUSYBOX = 'busybox'
+BUSYBOX = 'busybox:latest'
 TEST_API_VERSION = os.environ.get('DOCKER_TEST_API_VERSION')
 
 logger = None
