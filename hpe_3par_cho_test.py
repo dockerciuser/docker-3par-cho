@@ -524,10 +524,10 @@ try:
             try:
                 performed_action = dcv.delete_snapshot(snapshot)
             except TestError as e:
-                LogError(str(e), 1, action)
+                LogError(str(e))
                 continue
             except docker.errors.APIError as ar:
-                LogError(str(ar), 1, action)
+                LogError(str(ar))
                 continue
 
     volume_list = client.volumes.list()
@@ -536,10 +536,10 @@ try:
             try:
                 performed_action = dcv.delete_volume(volume)
             except TestError as e:
-                LogError(str(e), 1, action)
+                LogError(str(e))
                 continue
             except docker.errors.APIError as ar:
-                LogError(str(ar), 1, action)
+                LogError(str(ar))
                 continue
 
 except TestError as e:
