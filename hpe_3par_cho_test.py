@@ -235,18 +235,18 @@ class TestError:
 ##### Docker Volume Plugin class ######################################
 class Docker3ParVolumePlugin():
     # method to perform create volume operation
-    def create_volume(self, name, driver, **kwargs):
+    def create_volume(self, name, **kwargs):
         client = docker.from_env(version=TEST_API_VERSION)
         if 'flash_cache' in kwargs:
             kwargs['flash-cache'] = kwargs.pop('flash_cache')
         # Create a volume
-        volume = client.volumes.create(name=name, driver=driver,
+        volume = client.volumes.create(name=name, driver=HPE3PAR,
                                        labels={'type': 'volume'},
                                        driver_opts=kwargs
         )
         assert volume.id
         assert volume.name == name
-        assert volume.attrs['Driver'] == driver
+        assert volume.attrs['Driver'] == HPE3PAR
         assert volume.attrs['Options'] == kwargs
         get_volume = client.volumes.get(volume.id)
         assert get_volume.name == name
@@ -281,16 +281,16 @@ class Docker3ParVolumePlugin():
         return True
 
     # method to perform create snapshot operation
-    def create_snapshot(self, name, driver, **kwargs):
+    def create_snapshot(self, name, **kwargs):
         client = docker.from_env(version=TEST_API_VERSION)
         # Create a snapshot
-        snapshot = client.volumes.create(name=name, driver=driver,
+        snapshot = client.volumes.create(name=name, driver=HPE3PAR,
                                          labels={'type': 'snapshot'},
                                          driver_opts=kwargs
         )
         assert snapshot.id
         assert snapshot.name == name
-        assert snapshot.attrs['Driver'] == driver
+        assert snapshot.attrs['Driver'] == HPE3PAR
         assert snapshot.attrs['Options'] == kwargs
         get_snapshot = client.volumes.get(snapshot.id)
         assert get_snapshot.name == name
@@ -333,8 +333,7 @@ def test_create_volume():
     volumeCount += 1
     capacity = random.randint(1,args.maxVolumeSize)
     LogMessage("==========> Performing create of new %d GB volume: %s <==========" % (capacity,name))
-    volume = dcv.create_volume(name, driver=HPE3PAR,
-                               size=str(capacity), provisioning=PROVISIONING)
+    volume = dcv.create_volume(name, size=str(capacity), provisioning=PROVISIONING)
     return volume
 
 def test_create_snapshot(volume_name):
@@ -342,8 +341,7 @@ def test_create_snapshot(volume_name):
     name = "snapshot-%d" % snapshotCount
     snapshotCount += 1
     LogMessage("==========> Performing create of new snapshot of %s : %s <==========" % (volume_name, name))
-    snapshot = dcv.create_snapshot(name, driver=HPE3PAR,
-                                   virtualCopyOf=volume_name)
+    snapshot = dcv.create_snapshot(name, virtualCopyOf=volume_name)
     return snapshot
 
 #######################################################
@@ -391,11 +389,14 @@ try:
 
         try:
             if action == "create_volume":
+                volumes = client.volumes.list(filters = {'driver':HPE3PAR,
+                                                         'label': 'type=volume'})
                 if len(volumes) >= args.maxVolumes - 1:
                     continue
-                performed_action= test_create_volume()
-                if performed_action:
-                    LogMessage("************Successfully completed %s operation.**************" % action,1,action)
+                else:
+                    performed_action= test_create_volume()
+                    if performed_action:
+                        LogMessage("************Successfully completed %s operation.**************" % action,1,action)
 
             elif action == "mount_volume":
                 volumes = client.volumes.list(filters = {'dangling':True, 'driver':HPE3PAR,
@@ -439,15 +440,18 @@ try:
                         dcv.delete_volume(local)
 
             elif action == "create_snapshot":
-                if len(volumes) >= args.maxVolumes - 1:
+                snapshots = client.volumes.list(filters = {'driver':HPE3PAR,
+                                                         'label': 'type=snapshot'})
+                if len(snapshots) >= args.maxVolumes - 1:
                     continue
-                volumes = client.volumes.list(filters={'driver':HPE3PAR, 'label': 'type=volume'})
-                volumes_len = len(volumes)
-                if volumes_len > 0:
-                    random_volume = volumes[random.randint(0, (volumes_len - 1))]
-                    performed_action= test_create_snapshot(random_volume.name)
-                    if performed_action:
-                        LogMessage("************Successfully completed %s operation.**************" % action,1,action)
+                else:
+                    volumes = client.volumes.list(filters={'driver':HPE3PAR, 'label': 'type=volume'})
+                    volumes_len = len(volumes)
+                    if volumes_len > 0:
+                        random_volume = volumes[random.randint(0, (volumes_len - 1))]
+                        performed_action= test_create_snapshot(random_volume.name)
+                        if performed_action:
+                            LogMessage("************Successfully completed %s operation.**************" % action,1,action)
 
             elif action == "mount_snapshot":
                 snapshots = client.volumes.list(filters = {'dangling':True, 'driver':HPE3PAR,
