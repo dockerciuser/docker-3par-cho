@@ -1,7 +1,7 @@
 ####################################################################
 # Reliability Test Script for HPE 3Par Docker Volume plugin
 #
-#      randomly performs:  volume creation, deletion, mount and unmount
+#      randomly performs:  volume & snapshot creation, deletion, mount and unmount
 #      for a duration of time.
 #
 #       Prerequisites:
@@ -521,6 +521,9 @@ try:
             except TestError as e:
                 LogError(str(e))
                 continue
+            except Exception as e:
+                LogError(str(e))
+                continue
 
     snapshot_list = client.volumes.list(filters={'label': 'type=snapshot' })
     if len(snapshot_list) > 0:
@@ -533,6 +536,9 @@ try:
             except docker.errors.APIError as ar:
                 LogError(str(ar))
                 continue
+            except Exception as e:
+                LogError(str(e))
+                continue
 
     volume_list = client.volumes.list()
     if len(volume_list) > 0:
@@ -544,6 +550,9 @@ try:
                 continue
             except docker.errors.APIError as ar:
                 LogError(str(ar))
+                continue
+            except Exception as e:
+                LogError(str(e))
                 continue
 
 except TestError as e:
